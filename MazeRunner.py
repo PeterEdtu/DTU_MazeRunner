@@ -1,4 +1,6 @@
 from enum import Enum
+import time
+import math
 
 class PythonBot():
     
@@ -12,95 +14,158 @@ class PythonBot():
         for pos in board.maze:
             print(str(pos))
             
-    def primarySearch(self, dest):
+    def primarySearch(self, dest, goal):
+        
+            self.found = False
             
             if board.maze[dest.y][dest.x - 1] != "#" and board.maze[dest.y][dest.x - 1]!= "*":
-                print("0 R")
-                self.moveList.append("0 R") #need to go Right                
+                self.moveList.append("0 L") #need to go Right                
                 newDest = Point(dest.x - 1, dest.y)
-                self.secondarySearch(newDest)
                 
-            self.moveList=[]
-                
-            if board.maze[dest.y + 1][dest.x] != "#" and board.maze[dest.y + 1][dest.x]!= "*":
-                print("0 U")                
-                self.moveList.append("0 U") #need to go Up
-                newDest = Point(dest.x, dest.y + 1)
-                self.secondarySearch(newDest)
-                
-            self.moveList=[]
+                if self.secondarySearch(newDest, goal) == True:
+                    return
+            self.moveList = []
                 
             if board.maze[dest.y][dest.x + 1] != "#"and board.maze[dest.y][dest.x + 1]!= "*":
-                print("0 L")                
-                self.moveList.append("0 L") #need to go Left
+                #print("0 R")                
+                self.moveList.append("0 R") #need to go Left
                 newDest = Point(dest.x + 1, dest.y)
-                self.secondarySearch(newDest)
-            
-            self.moveList=[]
                 
+                if self.secondarySearch(newDest, goal) == True:
+                    return
+                    
+            self.moveList = []
+                
+            if board.maze[dest.y + 1][dest.x] != "#" and board.maze[dest.y + 1][dest.x]!= "*":
+                #print("0 D")                
+                self.moveList.append("0 D") #need to go Up
+                newDest = Point(dest.x, dest.y + 1)
+                
+                if self.secondarySearch(newDest, goal) == True:
+                    return
+                    
+            self.moveList = []
+                  
             if board.maze[dest.y - 1][dest.x] != "#" and board.maze[dest.y - 1][dest.x]!= "*":
-                print("0 D")                
-                self.moveList.append("0 D") #need to go Down
+                #print("0 U")                
+                self.moveList.append("0 U") #need to go Down
                 newDest = Point(dest.x, dest.y - 1)
-                self.secondarySearch(newDest)
+                
+                if self.secondarySearch(newDest, goal) == True:
+                    return
+                    
                 
             print("Done !!!")
             
-    def secondarySearch(self, dest):
+    def secondarySearch(self, dest, goal):
+        #print(len(self.matrix))        
+        
         right = False
         left = False
         up = False
         down = False
         
-        if board.maze[dest.y][dest.x] == "0":
-            print("I find a way : " + str(self.moveList))
+        if board.maze[dest.y][dest.x] == "!":
+            #print("I find a way : " + str(self.moveList))
+            self.found = True
             self.matrix.append(self.moveList.copy())
-            return
+            return True
         
         else:
             board.maze[dest.y][dest.x]= "*"
             
-        for n in range(0,4):
+        if self.found == False:
               
-            print("Searching : " +  board.maze[dest.y][dest.x] + " / " + str(dest.x) + "," + str(dest.y))
+            #print("Searching : " +  board.maze[dest.y][dest.x] + " / " + str(dest.x) + "," + str(dest.y))
             
-            if board.maze[dest.y][dest.x - 1] != "#" and board.maze[dest.y][dest.x - 1]!= "*" and right == False:
-                print("0 R")
-                self.moveList.append("0 R") #need to go Right                
-                newDest = Point(dest.x - 1, dest.y)
-                self.secondarySearch(newDest)
-                print("Remove : " + str(self.moveList.pop(len(self.moveList)-1)))
-                right = True
+            #print("len : " + str(len(self.moveList)))            
+            distances = []  
+            
+            distanceLeftPoint = calculateDistance(Point(dest.x - 1, dest.y), goal)
+            distanceRightPoint = calculateDistance(Point(dest.x + 1, dest.y), goal)
+            distanceDownPoint = calculateDistance(Point(dest.x, dest.y + 1), goal)
+            distanceUpPoint = calculateDistance(Point(dest.x, dest.y - 1),goal)
+            
+            
+            distances.append(distanceLeftPoint)
+            distances.append(distanceRightPoint)
+            distances.append(distanceDownPoint)
+            distances.append(distanceUpPoint)
+            
+            distances.sort()
+            
+            #print(distances)
+            
+            for w in range(0, len(distances)):
+            
+                    if distances[w] == distanceLeftPoint: #left point est plus proche
+                     #print("left short")
+                     try:
+                         if board.maze[dest.y][dest.x - 1] != "#" and board.maze[dest.y][dest.x - 1]!= "*" and left == False:
+                             self.moveList.append("0 L")             
+                             newDest = Point(dest.x - 1, dest.y)
                 
+                             if self.secondarySearch(newDest, goal) == True:
+                                 return
                 
-            if board.maze[dest.y + 1][dest.x] != "#" and board.maze[dest.y + 1][dest.x]!= "*" and up == False:
-                print("0 U")                
-                self.moveList.append("0 U") #need to go Up
-                newDest = Point(dest.x, dest.y + 1)
-                self.secondarySearch(newDest)
-                print("Remove : " + str(self.moveList.pop(len(self.moveList)-1)))
-                up = True
+                        # print("Remove : " + str(self.moveList.pop(len(self.moveList)-1)))
+                             left = True
+                             self.removePreviousGraphicMove(newDest);
+                     except:
+                         pass
+
+                    elif distances[w] == distanceRightPoint: #right point est plus proche
+                    # print("right short")
+                     try:
+                         if board.maze[dest.y][dest.x + 1] != "#"and board.maze[dest.y][dest.x + 1]!= "*" and right == False:
+                             self.moveList.append("0 R")
+                             newDest = Point(dest.x + 1, dest.y)
                 
+                             if self.secondarySearch(newDest, goal) == True:
+                                 return
+                                
+                    
+                        # print("Remove : " + str(self.moveList.pop(len(self.moveList)-1)))
+                             right = True
+                             self.removePreviousGraphicMove(newDest);
+
+                     except:
+                         pass
+                 
+                    elif distances[w] == distanceDownPoint: #down point est plus proche
+                     #print("down short")
+                     try:                         
+                         if board.maze[dest.y + 1][dest.x] != "#" and board.maze[dest.y + 1][dest.x]!= "*" and down == False:
+                             self.moveList.append("0 D") #need to go down
+                             newDest = Point(dest.x, dest.y + 1)
                 
-            if board.maze[dest.y][dest.x + 1] != "#"and board.maze[dest.y][dest.x + 1]!= "*" and left == False:
-                print("0 L")                
-                self.moveList.append("0 L") #need to go Left
-                newDest = Point(dest.x + 1, dest.y)
-                self.secondarySearch(newDest)
-                print("Remove : " + str(self.moveList.pop(len(self.moveList)-1)))
-                left = True
+                             if self.secondarySearch(newDest, goal) == True:
+                                 return
+                    
+                         #print("Remove : " + str(self.moveList.pop(len(self.moveList)-1)))
+                             down = True
+                             self.removePreviousGraphicMove(newDest);
+                             
+                     except:
+                         pass
+                 
+                    elif distances[w] == distanceUpPoint: #up point est plus proche
+                     #print("up short")                 
+                     try:                         
+                         if board.maze[dest.y - 1][dest.x] != "#" and board.maze[dest.y - 1][dest.x]!= "*" and up == False:
+                             self.moveList.append("0 U") #need to go up
+                             newDest = Point(dest.x, dest.y - 1)
                 
-                
-            if board.maze[dest.y - 1][dest.x] != "#" and board.maze[dest.y - 1][dest.x]!= "*" and down == False:
-                print("0 D")                
-                self.moveList.append("0 D") #need to go Down
-                newDest = Point(dest.x, dest.y - 1)
-                self.secondarySearch(newDest)
-                print("Remove : " + str(self.moveList.pop(len(self.moveList)-1)))
-                down = True
-                
+                             if self.secondarySearch(newDest, goal) == True:
+                                 return
+                    
+                         #print("Remove : " + str(self.moveList.pop(len(self.moveList)-1)))
+                             up = True
+                             self.removePreviousGraphicMove(newDest);
+                     except:
+                        pass
         
-            self.removePreviousGraphicMove(dest);
+        #self.removePreviousGraphicMove(dest);
             
     def removePreviousGraphicMove(self,dest):
             if board.maze[dest.y][dest.x]== "*":
@@ -166,13 +231,19 @@ class Node():
         self.parent = parent
         self.nexts = nexts
 
+
+def calculateDistance(A,B):
+    result = math.sqrt(((B.x - A.x)**2) + ((B.y - A.y)**2))
+    return result
+
 def parse():
 	# TODO:
 	# This template was intended for Python 2.
 	# If using Python 3, simply change raw_input() to input()
 	
 	#dims = input().split(' ')
-     dims = "7 7".split(' ')
+     #dims = "7 7".split(' ')
+     dims = "10 10".split(' ')
 	#width = int(dims[0])
      width = int(dims[0])
      #height = int(dims[1])
@@ -191,24 +262,31 @@ def parse():
      maze = []
      for i in range(0,height):
          #line = input()
+         
          if i == 0:
-             line = "#######"
+             line = "#      #  "
         
          elif i == 1:
-             line = "#  # !#"
+             line = "#0     #!#"
              
          elif i == 2:
-             line = "#    ##"
+             line = "#  ##     #"
              
          elif i == 3:
-             line = "#     #"
+             line = "# ##  #  #"
         
          elif i == 4:
-             line = "# ## 0#"
+             line = "# #####   "
          elif i == 5:
-             line = "#######"
+             line = "#        #"
          elif i == 6:
-             line = "#######"
+             line = "#        #"
+         elif i == 7:
+             line = "#        #"
+         elif i == 8:
+             line = "# #      #"
+         elif i == 9:
+             line = "##########"
              
          row = []
          for j in range(width):
@@ -245,7 +323,7 @@ def parse():
  
      return goal
  
-
+start = time.time()
 
 dest = parse()
  
@@ -262,8 +340,11 @@ print("GOAL : " + str(dest.x) + ", " + str(dest.y))
 
 myBot = PythonBot(bot.x, bot.y)
 
-myBot.primarySearch(dest)
+myBot.primarySearch(Point(bot.x, bot.y), dest)
 
 #myBot.showMoves()
 
 compute_solution(myBot.matrix)
+
+end = time.time()
+print ("Finished in " + str(end) + " - " + str(start) + " = " + str(end-start) + " sec")
